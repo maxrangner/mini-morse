@@ -1,3 +1,5 @@
+#pragma once
+
 namespace MorseProtocol {
   enum PacketType {
     STATUS // 0
