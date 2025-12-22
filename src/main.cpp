@@ -11,6 +11,6 @@ void setup() {
 }
 
 void loop() {
-  decoder.listen();
+  decoder.update();
   // Serial.println(num++);
 }

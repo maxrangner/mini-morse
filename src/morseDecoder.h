@@ -8,12 +8,17 @@ class MorseDecoder {
     char inputString[inputMaxLen + 1];
     uint8_t inputStringLen;
     String decodedInput;
-    long long previousCharInput;
+    bool isWriting;
+    unsigned long now;
+    unsigned long previousCharInput;
+    unsigned long spaceDuration;
     Button* BuiltinButton;
     ButtonManager ButtonMng;
 public:
     MorseDecoder();
-    void listen();
-    String decodeMorse();
+    void update();
+    void addToInputString(char newChar, bool state);
+    char decodeMorseChar(const char* morseChar);
+    String decodeMorseString();
     void printInputString();
 };
