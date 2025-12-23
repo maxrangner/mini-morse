@@ -1,8 +1,9 @@
 #include <Arduino.h>
-#include "morseDecoder.h"
+#include "SystemManager.h"
+#include "MorseDecoder.h"
 
-MorseDecoder decoder;
-int num = 0;
+MorseDecoder Decoder;
+SystemManager SysManager(&Decoder);
 
 void setup() {
   Serial.begin(115200);
@@ -11,6 +12,5 @@ void setup() {
 }
 
 void loop() {
-  decoder.update();
-  // Serial.println(num++);
+  SysManager.run();
 }

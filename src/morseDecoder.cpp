@@ -3,11 +3,17 @@
 #include "pins.h"
 
 MorseDecoder::MorseDecoder() {
+    // Hardware
     BuiltinButton = ButtonMng.addButton(builtinButtonPin, true, 10, 300);
+    
+    // Data
     inputString[0] = '\0';
     inputStringLen = 0;
-    isWriting = false;
-    now = 0;
+    
+    // Logic
+    isWaitingForNextSymbol = false;
+    newCharAvailable = false;
+    now = millis();
     previousCharInput = 0;
     spaceDuration = 1000;
 }
@@ -17,24 +23,30 @@ void MorseDecoder::update() {
     ButtonMng.updateAll();
 
     if (inputStringLen < inputMaxLen) {
-        if (BuiltinButton->pressed()) addToInputString('.', true);
-        if (BuiltinButton->held()) addToInputString('-', true);
+        if (BuiltinButton->wasPushed()) addSymbol('.', true);
+        if (BuiltinButton->wasHeld()) addSymbol('-', true);
     }
-    if (BuiltinButton->released()) previousCharInput = now;
-    if ((now > previousCharInput + spaceDuration) && isWriting) {
-        addToInputString(' ', false);
-        printInputString();
+
+    if (BuiltinButton->pressed() || BuiltinButton->released()) {
+        previousCharInput = now;
+        isWaitingForNextSymbol = true;
+    }
+
+    if ((isWaitingForNextSymbol && (now - previousCharInput > spaceDuration)) || inputStringLen >= inputMaxLen) {
+        // addToInputString(' ', false); Ska bli "skicka"
+        newCharAvailable = true;
+        isWaitingForNextSymbol = false;
     }
 }
 
-void MorseDecoder::addToInputString(char newChar, bool state) {
-    inputString[inputStringLen++] = newChar;
-    inputString[inputStringLen] = '\0';
-    previousCharInput = now;
-    isWriting = state;
+void MorseDecoder::addSymbol(char newChar, bool state) {
+    inputString[inputStringLen] = newChar;
+    printInput();
+    inputString[++inputStringLen] = '\0';
+    isWaitingForNextSymbol = state;
 }
 
-char MorseDecoder::decodeMorseChar(const char* morseChar) {
+char MorseDecoder::decodeChar(const char* morseChar) {
     for (uint8_t i = 0; i < morseKeyLen; i++) {
         bool isMatching = true;
         uint8_t j = 0;
@@ -46,34 +58,29 @@ char MorseDecoder::decodeMorseChar(const char* morseChar) {
             j++;
         }
         if (isMatching && (morseChar[j] == '\0' && morseKey[i].morse[j] == '\0')) {
+            clearInputString();
             return morseKey[i].latin;
         }
     }
+    clearInputString();
     return morseKey[0].latin; // Unknown char
 }
 
-String MorseDecoder::decodeMorseString() {
-    String decodedOutput;
-    char charBuffer[20];
-    uint8_t charBufferLen = 0;
-
-    for (uint8_t i = 0; i < inputStringLen; i++) {
-        if (inputString[i] != ' ') {
-            charBuffer[charBufferLen++] = inputString[i];
-        } else {
-            charBuffer[charBufferLen] = '\0';
-            decodedOutput += decodeMorseChar(charBuffer);
-            charBufferLen = 0;
-        }
-    }
-    if (charBufferLen > 0) {
-        charBuffer[charBufferLen] = '\0';
-        decodedOutput += decodeMorseChar(charBuffer);
-    }
-    return decodedOutput;
+void MorseDecoder::printInput() {
+    Serial.print(inputString[inputStringLen]);
 }
 
-void MorseDecoder::printInputString() {
-    Serial.print(inputString); Serial.print("    ");
-    Serial.println(decodeMorseString());
+void MorseDecoder::clearInputString() {
+    inputString[0] = '\0';
+    inputStringLen = 0;
+    Serial.print("   ");
+}
+
+bool MorseDecoder::hasNewData() {
+    return newCharAvailable;
+}
+
+char MorseDecoder::getCharacter() {
+    newCharAvailable = false;
+    return decodeChar(inputString);
 }
