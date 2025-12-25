@@ -18,16 +18,22 @@ MorseDecoder::MorseDecoder() {
     spaceDuration = 1000;
 }
 
-void MorseDecoder::update() {
+void MorseDecoder::update(Button* sharedButton) {
     now = millis();
     ButtonMng.updateAll();
 
     if (inputStringLen < inputMaxLen) {
-        if (BuiltinButton->wasPushed()) addSymbol('.', true);
-        if (BuiltinButton->wasHeld()) addSymbol('-', true);
+        if (sharedButton->wasPushed()) {
+            Serial.println("Pushed!");
+            addSymbol('.', true);
+        }
+        if (sharedButton->wasHeld()) {
+            Serial.println("Held!");
+            addSymbol('-', true);
+        }
     }
 
-    if (BuiltinButton->pressed() || BuiltinButton->released()) {
+    if (sharedButton->pressed() || sharedButton->released()) {
         previousCharInput = now;
         isWaitingForNextSymbol = true;
     }

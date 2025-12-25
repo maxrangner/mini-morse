@@ -21,7 +21,7 @@ class MorseDecoder {
     void clearInputString();
 public:
     MorseDecoder();
-    void update();
+    void update(Button* sharedButton);
     bool hasNewData();
     char getCharacter();
 };
