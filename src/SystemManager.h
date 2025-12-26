@@ -1,8 +1,7 @@
 #pragma once
+#include <GawiButtons.h>
 #include <Arduino.h>
 #include "morseDecoder.h"
-
-constexpr uint8_t timeOutDuration = 10;
 
 enum class SystemStates {
     IDLE,
@@ -11,12 +10,16 @@ enum class SystemStates {
 };
 
 class SystemManager {
+    uint8_t deviceId;
+    MorseDecoder Decoder;
+    Button* builtinButton;
+    ButtonManager ButtonMng;
     SystemStates currentState;
     String currentMessage;
     unsigned long timeOut;
-    MorseDecoder* connectedDecoder;
+    unsigned long timeOutDuration;
 public:
-    SystemManager(MorseDecoder* decoder);
+    SystemManager();
     void run();
 };
 
