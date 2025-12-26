@@ -2,17 +2,26 @@
 #include "pins.h"
 
 SystemManager::SystemManager() {
-    uint8_t deviceId = 01;
-    SystemStates currentState = SystemStates::IDLE;
-    builtinButton = ButtonMng.addButton(builtinButtonPin, true);
-    String currentMessage = "";
-    unsigned long timeOut = 0;
-    const unsigned long timeOutDuration = 4000;
+    currentState = SystemStates::IDLE;
+    builtinButton = ButtonMng.addButton(
+        builtinButtonPin, // input pin
+        true // pull up
+        );
+    currentMessage = "";
+    timeOut = 0;
+    timeOutDuration = 4000;
+}
+
+void SystemManager::initialize() {
+    EspNetwork.initializeEspNow();
 }
 
 void SystemManager::run() {
+    ButtonMng.updateAll();
     Decoder.update(builtinButton);
     if (Decoder.hasNewData()) {
-        Serial.println(Decoder.getCharacter());
+        currentMessage += Decoder.getCharacter();
+        EspNetwork.broadcast(currentMessage);
+        Serial.println(currentMessage);
     }
 }

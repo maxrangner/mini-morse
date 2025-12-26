@@ -20,17 +20,10 @@ MorseDecoder::MorseDecoder() {
 
 void MorseDecoder::update(Button* sharedButton) {
     now = millis();
-    ButtonMng.updateAll();
 
     if (inputStringLen < inputMaxLen) {
-        if (sharedButton->wasPushed()) {
-            Serial.println("Pushed!");
-            addSymbol('.', true);
-        }
-        if (sharedButton->wasHeld()) {
-            Serial.println("Held!");
-            addSymbol('-', true);
-        }
+        if (sharedButton->wasPushed()) addSymbol('.', true);
+        if (sharedButton->wasHeld()) addSymbol('-', true);
     }
 
     if (sharedButton->pressed() || sharedButton->released()) {

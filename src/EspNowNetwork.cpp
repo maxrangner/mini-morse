@@ -1,15 +1,16 @@
 #include "EspNowNetwork.h"
 
-static Network* globalNetwork = nullptr;
+static EspNowNetwork* globalNetwork = nullptr;
 
-Network::Network() : peersNum(0) {
+EspNowNetwork::EspNowNetwork() : peersNum(0) {
     globalNetwork = this;
-    this->initializeEspNow();
     payload = 0;
 }
 
-void Network::initializeEspNow() {
+void EspNowNetwork::initializeEspNow() {
     WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    esp_wifi_set_channel(wifiChannel, WIFI_SECOND_CHAN_NONE);
     if (esp_now_init() != ESP_OK) {
         Serial.print("ESP-NOW failed to initialize.");
         while (true) {
@@ -18,28 +19,55 @@ void Network::initializeEspNow() {
         }
     } else {
         Serial.println("ESP-NOW initialized!");
+        addPeer(broadcastAddress);
         esp_now_register_send_cb(sentCallback);
         esp_now_register_recv_cb(receiveCallback);
     }
 }
 
-void Network::handleSend(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void EspNowNetwork::addPeer(const uint8_t* mac_addr) {
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(&peerInfo.peer_addr, mac_addr, 6);
+    if (!esp_now_is_peer_exist(mac_addr)) esp_now_add_peer(&peerInfo);
 }
 
-void Network::handleReceive(const uint8_t* mac, const uint8_t* data, int len) {
+void EspNowNetwork::broadcast(const String &message) { 
+    esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)message.c_str(), message.length());
 }
 
-void Network::broadcast() { 
+void EspNowNetwork::handleSend(
+    const uint8_t *mac_addr, // MAC Adress of recepient
+    esp_now_send_status_t status // status of packet
+) {
 }
 
-void sentCallback(const uint8_t *mac_addr, esp_now_send_status_t status) {
-    // if (globalNetwork != nullptr) {
-    //     globalNetwork->handleSend();
-    // }
+void EspNowNetwork::handleReceive(
+    const uint8_t* mac_addr, // MAC Adress of sender
+    const uint8_t* data, // Packet data
+    int data_len // Lenght of data
+) {
+    char buffer[250];
+    strncpy(buffer, (const char *)data, 250);
+    buffer[data_len] = 0;
+    Serial.println(buffer);
 }
 
-void receiveCallback(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-    // if (globalNetwork != nullptr) {
-    //     globalNetwork->handleReceive();
-    // }
+// Global callback wrappers
+void sentCallback(
+    const uint8_t *mac_addr, // MAC Adress of sender
+    esp_now_send_status_t status // status of packet
+) {
+    if (globalNetwork != nullptr) {
+        globalNetwork->handleSend(mac_addr, status);
+    }
+}
+
+void receiveCallback(
+    const uint8_t *mac_addr, // MAC Adress of sender
+    const uint8_t *data, // Packet data
+    int data_len // Lenght of data
+) {
+    if (globalNetwork != nullptr) {
+        globalNetwork->handleReceive(mac_addr, data, data_len);
+    }
 }
