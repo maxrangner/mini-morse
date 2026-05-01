@@ -3,13 +3,16 @@
 #include "esp_log.h"
 
 #include "morse_key.h"
+#include "app_types.h"
 
 static const char *TAG = "morse_decoder";
 
 MorseDecoder::MorseDecoder() {}
 
-void MorseDecoder::init()
+void MorseDecoder::init(QueueHandle_t app_queue)
 {
+    app_queue_ = app_queue;
+
     button_service_init();
     button_cfg_t btn_cfg = {
         .gpio_num = 9,
@@ -50,11 +53,8 @@ void MorseDecoder::morse_task(void* pvParameters)
 {
     auto* self = static_cast<MorseDecoder*>(pvParameters);
 
-    uint8_t counter = 0;
-
     while(1) {
-        // ESP_LOGI(TAG, "MorseDecoder: %d", counter++);
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        vTaskDelay(portMAX_DELAY);
     }
 }
 
@@ -65,7 +65,6 @@ void MorseDecoder::append_symbol(char c)
         input_buffer_[len] = c;
         input_buffer_[len + 1] = '\0';
     }
-    
 }
 
 void MorseDecoder::btn_cb(button_event_t btn_event, uint8_t gpio_num, void* user_data)
@@ -97,17 +96,22 @@ void MorseDecoder::input_timer_cb(TimerHandle_t timer)
 {
     auto *self = static_cast<MorseDecoder *>(pvTimerGetTimerID(timer));
 
+    app_event_t event;
+    event.event = AppEventType::INPUT_CHAR;
+
     char input_char = self->decode_symbol(self->input_buffer_);
-    ESP_LOGI(TAG, "Morse: %s       Latin: %c", self->input_buffer_, input_char);
+    event.input_char = input_char;
+
+    xQueueSend(self->app_queue_, &event, 0);
 
     memset(&self->input_buffer_[0], 0, sizeof(self->input_buffer_));
 }
 
-char MorseDecoder::decode_symbol(char* symbol)
+char MorseDecoder::decode_symbol(char* c)
 {
     char return_char = {};
     for (uint8_t i = 0; i < morseKeyLen; i++) {
-        if (strcmp(morseKey[i].morse, symbol) == 0) {
+        if (strcmp(morseKey[i].morse, c) == 0) {
             return_char = morseKey[i].latin;
         }
     }

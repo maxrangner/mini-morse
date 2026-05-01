@@ -9,6 +9,7 @@
 
 class MorseDecoder {
     TaskHandle_t task_morse_decoder_ = nullptr;
+    QueueHandle_t app_queue_;
     button_t btn_;
 
     char input_buffer_[kInputBufferSize] = {};
@@ -21,7 +22,7 @@ class MorseDecoder {
     void append_symbol(char c);
 public:
     MorseDecoder();
-    void init();
-    char decode_symbol(char* symbol);
+    void init(QueueHandle_t app_queue);
+    char decode_symbol(char* c);
     
 };
