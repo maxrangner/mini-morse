@@ -1,6 +1,7 @@
 #pragma once
 
-#include "button_driver.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 class AppController {
     TaskHandle_t task_app_controller_ = nullptr;

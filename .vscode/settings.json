@@ -3,7 +3,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c3-builtin.cfg"
   ],
-  "idf.portWin": "detect",
+  "idf.portWin": "COM11",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32c3"
   },
@@ -12,5 +12,6 @@
     "--background-index",
     "--query-driver=**",
     "--compile-commands-dir=d:\\Projekt\\mini-morse\\build"
-  ]
+  ],
+  "idf.flashType": "UART"
 }
